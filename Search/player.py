@@ -91,10 +91,10 @@ class PlayerControllerMinimax(PlayerController):
     def heuristic(self, player, state):
         hookA = state.get_hook_positions()[0]
         hookB = state.get_hook_positions()[1]
-        scoreA = state.get_player_scores()[0]
-        scoreB = state.get_player_scores()[1]
+        scoreA = float(state.get_player_scores()[0])
+        scoreB = float(state.get_player_scores()[1])
         fish_positions = state.get_fish_positions() 
-        hA,hB = 0,0     #contains positional value for player A and B.
+        hA,hB = 0.0,0.0     #contains positional value for player A and B.
 
         #For every fish in the sea, multiply fish value by the inverse square distance to player hooks.
         #More valuable fish can give much higher values if you are close.
@@ -108,7 +108,7 @@ class PlayerControllerMinimax(PlayerController):
 
         #Returns highest value between A and B, but negates it if the highest value was for the other player.
         #Should uphold zero-sum requirement that h(A,s)+h(B,s) = 0.
-        return max(stateValA,stateValB)*((1-player)*self.fltComp(stateValA,stateValB) + player*self.fltComp(stateValB,stateValA))
+        return max(stateValA,stateValB)*(float(1-player)*self.fltComp(stateValA,stateValB) + float(player)*self.fltComp(stateValB,stateValA))
         
 
     #Helper function to calculate inverse square distance between sets of coordinates.
@@ -128,6 +128,33 @@ class PlayerControllerMinimax(PlayerController):
         else:
             return -1
 
+    def minimaxAB(self, node, depth, alpha, beta, player):
+        a = alpha
+        b = beta
+        v = 0.0
+
+        children = node.compute_and_get_children()
+        if (depth==0 or len(children)==0):
+            return self.heuristic(player,node.state)
+
+        if player==0:           #player A
+            v = -float(math.inf)
+            for child in children:
+                v = float(max(v, self.minimaxAB(child,depth-1,a,b,1)))
+                a = float(max(a,v))
+                if float(b)<=a:
+                    break       #beta prune
+
+        else:                   #player B
+            v = float(math.inf)
+            for child in children:
+                v = float(min(v, self.minimaxAB(child,depth-1,a,b,0)))
+                b = float(min(b,v))
+                if b<=float(a):
+                    break       #alpha prune
+
+        return v
+
     def search_best_next_move(self, model, initial_tree_node):
         """
         Use your minimax model to find best possible next move for player 0 (green boat)
@@ -141,14 +168,25 @@ class PlayerControllerMinimax(PlayerController):
         """
 
         # EDIT THIS METHOD TO RETURN BEST NEXT POSSIBLE MODE FROM MINIMAX MODEL ###
-        
-        state = initial_tree_node.state
         pl = 0
+        state = initial_tree_node.state
         h = self.heuristic(pl,state)
-        print(h)
 
-        # NOTE: Don't forget to initialize the children of the current node 
-        #       with its compute_and_get_children() method!
+        children_nodes = initial_tree_node.compute_and_get_children()
+        best_v = -float(math.inf)
+        best_node = children_nodes[0]
+        for child in children_nodes:
+            v = self.minimaxAB(child,2,0,0,0)
+            #print("child minimax value: " + str(v))
+            if v>best_v:
+                best_v = v
+                best_node = child
 
-        random_move = random.randrange(5)
-        return ACTION_TO_STR[random_move]
+        #print("best node minimax value: " + str(v))
+
+        next_move = ACTION_TO_STR[best_node.move]
+        #print("recommended next move: " + next_move)
+        return next_move
+        
+        #random_move = random.randrange(5)
+        #return ACTION_TO_STR[random_move]
