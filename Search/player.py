@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import random
+import math
 
 from fishing_game_core.game_tree import Node
 from fishing_game_core.player_utils import PlayerController
@@ -73,6 +74,60 @@ class PlayerControllerMinimax(PlayerController):
         # EDIT THIS METHOD TO RETURN A MINIMAX MODEL ###
         return None
 
+    #basic heuristic model. sums up score at given state.
+    #def heuristic(self, player, state):
+    #    a,b = state.get_player_scores
+    #    if player==0:
+    #        return a-b
+    #    else:
+    #        return b-a
+
+
+    #Heuristic evaluation function v2.0, sums player score and sums up weighted distance to fish. 
+    #Takes into account both overall score and how good the hooks are positioned for each player.
+    #When comparing different states, if the score favors opponent identically, this heuristic will give a better heuristic score to the state with better hook position (i.e. less negative).
+    #Should uphold zero-sum game requirement.
+    #TODO: Account for caught fish. currently heuristic includes hooked fish into positional calculation for opponent!
+    def heuristic(self, player, state):
+        hookA = state.get_hook_positions()[0]
+        hookB = state.get_hook_positions()[1]
+        scoreA = state.get_player_scores()[0]
+        scoreB = state.get_player_scores()[1]
+        fish_positions = state.get_fish_positions() 
+        hA,hB = 0,0     #contains positional value for player A and B.
+
+        #For every fish in the sea, multiply fish value by the inverse square distance to player hooks.
+        #More valuable fish can give much higher values if you are close.
+        for x in fish_positions:
+            hA += self.invSquareDist(hookA,fish_positions[x])*state.get_fish_scores()[x]
+            hB += self.invSquareDist(hookB,fish_positions[x])*state.get_fish_scores()[x]
+
+        #Calculates the overall heuristic evaluation of the state for each player. Score plus positional value.
+        stateValA = scoreA-scoreB+hA-hB
+        stateValB = scoreB-scoreA+hB-hA
+
+        #Returns highest value between A and B, but negates it if the highest value was for the other player.
+        #Should uphold zero-sum requirement that h(A,s)+h(B,s) = 0.
+        return max(stateValA,stateValB)*((1-player)*self.fltComp(stateValA,stateValB) + player*self.fltComp(stateValB,stateValA))
+        
+
+    #Helper function to calculate inverse square distance between sets of coordinates.
+    def invSquareDist(this, tupleA, tupleB):
+        if(tupleA == tupleB):
+            return 0
+        x1,y1 = tupleA
+        x2,y2 = tupleB
+        return 1/(math.sqrt(math.pow(x2-x1,2) + math.pow(y2-y1,2)))
+
+    #Comparator for floats.
+    def fltComp(this,A,B):
+        if A==B:
+            return 0
+        if A>B:
+            return 1
+        else:
+            return -1
+
     def search_best_next_move(self, model, initial_tree_node):
         """
         Use your minimax model to find best possible next move for player 0 (green boat)
@@ -87,6 +142,11 @@ class PlayerControllerMinimax(PlayerController):
 
         # EDIT THIS METHOD TO RETURN BEST NEXT POSSIBLE MODE FROM MINIMAX MODEL ###
         
+        state = initial_tree_node.state
+        pl = 0
+        h = self.heuristic(pl,state)
+        print(h)
+
         # NOTE: Don't forget to initialize the children of the current node 
         #       with its compute_and_get_children() method!
 
