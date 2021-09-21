@@ -103,12 +103,10 @@ class PlayerControllerMinimax(PlayerController):
             hB += self.invSquareDist(hookB,fish_positions[x])*state.get_fish_scores()[x]
 
         #Calculates the overall heuristic evaluation of the state for each player. Score plus positional value.
-        stateValA = scoreA-scoreB+hA-hB
-        stateValB = scoreB-scoreA+hB-hA
+        stateVal = scoreA-scoreB+hA-hB
 
-        #Returns highest value between A and B, but negates it if the highest value was for the other player.
         #Should uphold zero-sum requirement that h(A,s)+h(B,s) = 0.
-        return max(stateValA,stateValB)*(float(1-player)*self.fltComp(stateValA,stateValB) + float(player)*self.fltComp(stateValB,stateValA))
+        return (float(1-player)*stateVal - float(player)*stateVal)
         
 
     #Helper function to calculate inverse square distance between sets of coordinates.
@@ -118,15 +116,6 @@ class PlayerControllerMinimax(PlayerController):
         x1,y1 = tupleA
         x2,y2 = tupleB
         return 1/(math.sqrt(math.pow(x2-x1,2) + math.pow(y2-y1,2)))
-
-    #Comparator for floats.
-    def fltComp(this,A,B):
-        if A==B:
-            return 0
-        if A>B:
-            return 1
-        else:
-            return -1
 
     def minimaxAB(self, node, depth, alpha, beta, player):
         a = alpha
@@ -176,7 +165,7 @@ class PlayerControllerMinimax(PlayerController):
         best_v = -float(math.inf)
         best_node = children_nodes[0]
         for child in children_nodes:
-            v = self.minimaxAB(child,2,0,0,0)
+            v = self.minimaxAB(child,8,0,0,0)
             #print("child minimax value: " + str(v))
             if v>best_v:
                 best_v = v
