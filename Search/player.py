@@ -96,7 +96,7 @@ class PlayerControllerMinimax(PlayerController):
         best_v = -float(math.inf)
         best_node = children_nodes[0]
         for child in children_nodes:
-            v = model.minimaxAB(child,8,0,0,0)
+            v = model.minimaxAB(child,32,0,0,0)
             #print("child minimax value: " + str(v))
             if v>best_v:
                 best_v = v
