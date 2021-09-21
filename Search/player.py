@@ -75,17 +75,6 @@ class PlayerControllerMinimax(PlayerController):
         model = Minimax()
         return model
 
-    #basic heuristic model. sums up score at given state.
-    #def heuristic(self, player, state):
-    #    a,b = state.get_player_scores
-    #    if player==0:
-    #        return a-b
-    #    else:
-    #        return b-a
-
-
-
-
     def search_best_next_move(self, model, initial_tree_node):
         """
         Use your minimax model to find best possible next move for player 0 (green boat)
@@ -107,7 +96,7 @@ class PlayerControllerMinimax(PlayerController):
         best_v = -float(math.inf)
         best_node = children_nodes[0]
         for child in children_nodes:
-            v = model.minimaxAB(child,2,0,0,0)
+            v = model.minimaxAB(child,8,0,0,0)
             #print("child minimax value: " + str(v))
             if v>best_v:
                 best_v = v
