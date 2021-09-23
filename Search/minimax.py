@@ -10,7 +10,7 @@ from fishing_game_core.shared import ACTION_TO_STR
 from operator import itemgetter
 
 class Minimax:
-
+    """
     #counter for how many times heuristic is called (profiling...)
     def counted(fn):
         def wrapper(*args, **kwargs):
@@ -22,13 +22,14 @@ class Minimax:
 
     def calls(self):
         return self.heuristic.called
+    """
 
     #Heuristic evaluation function v2.0, sums player score and sums up weighted distance to fish. 
     #Takes into account both overall score and how good the hooks are positioned for each player.
     #When comparing different states, if the score favors opponent identically, this heuristic will give a better heuristic score to the state with better hook position (i.e. less negative).
     #Should uphold zero-sum game requirement.
     #TODO: Account for caught fish. currently heuristic includes hooked fish into positional calculation for opposite player!
-    @counted
+    #@counted
     def heuristic(self, player, state):
         hookA = state.get_hook_positions()[0]
         hookB = state.get_hook_positions()[1]

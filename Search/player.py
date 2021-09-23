@@ -53,7 +53,7 @@ class PlayerControllerMinimax(PlayerController):
                 model=model, initial_tree_node=node)
 
             #print n.of. calls to heuristic (profiling)
-            print("Calls: "+str(model.calls()))
+            #print("Calls: "+str(model.calls()))
 
             # Execute next action
             self.sender({"action": best_move, "search_time": None})
