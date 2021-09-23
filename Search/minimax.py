@@ -1,23 +1,42 @@
 #!/usr/bin/env python3
 import random
 import math
-import time
+from typing import Counter
+from time import time
 
 from statehash import StateHash
 from fishing_game_core.game_tree import Node
 from fishing_game_core.player_utils import PlayerController
 from fishing_game_core.shared import ACTION_TO_STR
+from operator import itemgetter
 
 class Minimax:
-
     def __init__(self):
-        self.tt = StateHash()
+        self.time_overhead = 0
+        self.time_threshold = 75*1e-3
+        self.time_start = None
+        self.tt = StateHash()    
+    
+    """
+    #counter for how many times heuristic is called (profiling...)
+    def counted(fn):
+        def wrapper(*args, **kwargs):
+            wrapper.called += 1
+            return fn(*args, **kwargs)
+        wrapper.called = 0
+        wrapper.__name__ = fn.__name__
+        return wrapper
 
+    def calls(self):
+        return self.heuristic.called
+    """
+        
     #Heuristic evaluation function v2.0, sums player score and sums up weighted distance to fish. 
     #Takes into account both overall score and how good the hooks are positioned for each player.
     #When comparing different states, if the score favors opponent identically, this heuristic will give a better heuristic score to the state with better hook position (i.e. less negative).
     #Should uphold zero-sum game requirement.
-    #TODO: Account for caught fish. currently heuristic includes hooked fish into positional calculation for opponent!
+    #TODO: Account for caught fish. currently heuristic includes hooked fish into positional calculation for opposite player!
+    #@counted
     def heuristic(self, player, state):
         hookA = state.get_hook_positions()[0]
         hookB = state.get_hook_positions()[1]
@@ -60,7 +79,11 @@ class Minimax:
         b = beta
         v = 0.0
 
+        if (self.checktimeout()):
+            return v
+
         children = node.compute_and_get_children()
+        #leaf/depth limit check
         if (depth==0 or len(children)==0):
             #check transposition table if state has been visited
             h = self.tt.get(node.state)
@@ -69,20 +92,70 @@ class Minimax:
                 self.tt.add(node.state,h)
             return h
 
+        #move ordering 
+        ordered_children = []         #list of tuples, tuple consists of the heuristic value of a child's state and the child object itself
+        for child in children:
+            ordered_children.append((self.heuristic(player,child.state),child))     #add tuple (heuristic value, child obj)
+        ordered_children.sort(key=itemgetter(0),reverse=True)  # sorts list by heuristic value in place 
+
+        """
+        for x in ordered_children:     #test...
+            print("heuristic val: "+str(x[0]))
+        """
+
         if player==0:           #player A
             v = -(math.inf)
-            for child in children:
-                v = max(v, self.minimaxAB(child,depth-1,a,b,1))
+            for child in ordered_children:
+                v = max(v, self.minimaxAB(child[1],depth-1,a,b,1))
                 a = max(a,v)
-                if b<=a:
+                if b<=v:
                     break       #beta prune
+                if (self.checktimeout()):
+                    return v
 
         else:                   #player B
             v = math.inf
-            for child in children:
-                v = min(v, self.minimaxAB(child,depth-1,a,b,0))
+            for child in ordered_children:
+                v = min(v, self.minimaxAB(child[1],depth-1,a,b,0))
                 b = min(b,v)
-                if b<=a:
+                if v<=a:
                     break       #alpha prune
+                if (self.checktimeout()):
+                    return v
 
         return v
+
+    def IDDFS(self, children_nodes, time_start):
+        self.time_start = time_start
+        best_node = children_nodes[0]
+        for depth in range(2, 100):
+            if (self.checktimeout()):
+                self.time_overhead = 0
+                return best_node
+
+            best_value = -math.inf
+
+            for child in children_nodes:
+                self.time_overhead = self.time_overhead + 0.0035
+                if(depth%2 == 1):
+                    value = -self.minimaxAB(child, depth, -math.inf, math.inf, 0)
+                else:
+                    value = self.minimaxAB(child, depth, -math.inf, math.inf, 0)
+
+                if (self.checktimeout()):
+                    self.time_overhead = 0
+                    return best_node
+
+                if (value > best_value):  
+                    best_value = value
+                    temp_node = child
+                #print(depth)
+            best_node = temp_node 
+
+        return best_node
+
+    def checktimeout(self):
+        if((time() - self.time_start + self.time_overhead)<= self.time_threshold):
+            return False
+        else:
+            return True
