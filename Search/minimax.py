@@ -1,13 +1,18 @@
 #!/usr/bin/env python3
 import random
 import math
-import time
+from time import time
 
 from fishing_game_core.game_tree import Node
 from fishing_game_core.player_utils import PlayerController
 from fishing_game_core.shared import ACTION_TO_STR
 
 class Minimax:
+    def __init__(self):
+        self.time_overhead = 0.02
+        self.time_threshold = 75*1e-3 - self.time_overhead
+        self.time_start = None
+    
     #Heuristic evaluation function v2.0, sums player score and sums up weighted distance to fish. 
     #Takes into account both overall score and how good the hooks are positioned for each player.
     #When comparing different states, if the score favors opponent identically, this heuristic will give a better heuristic score to the state with better hook position (i.e. less negative).
@@ -30,11 +35,11 @@ class Minimax:
         stateVal = scoreA-scoreB+hA-hB
 
         #Should uphold zero-sum requirement that h(A,s)+h(B,s) = 0.
-        return (-player*stateVal - player*stateVal)
+        return ((1-player)*stateVal - player*stateVal)
         
 
     #Helper function to calculate inverse square distance between sets of coordinates.
-    def invSquareDist(this, tupleA, tupleB):
+    def invSquareDist(self, tupleA, tupleB):
         if(tupleA == tupleB):
             return 0
         x1,y1 = tupleA
@@ -57,6 +62,8 @@ class Minimax:
                 a = max(a,v)
                 if b<=a:
                     break       #beta prune
+                if (self.checktimeout()):
+                    break
 
         else:                   #player B
             v = math.inf
@@ -65,5 +72,26 @@ class Minimax:
                 b = min(b,v)
                 if b<=a:
                     break       #alpha prune
+                if (self.checktimeout()):
+                    break 
 
         return v
+
+    def IDDFS(self, root, time_start):
+        self.time_start = time_start
+        value = -math.inf
+        depth = 0
+        while True:
+            value = self.minimaxAB(root, depth, -math.inf, math.inf, 0)
+            if (self.checktimeout() | depth == 2):
+                break
+            depth = depth + 1
+            #print(depth)
+        return value
+
+    def checktimeout(self):
+        #print(str(time()) + " " + str(self.time_start) + " " + str(self.time_threshold))
+        if(time() - self.time_start <= self.time_threshold):
+            return False
+        else:
+            return True
