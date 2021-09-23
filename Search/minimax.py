@@ -25,8 +25,8 @@ class Minimax:
         return self.heuristic.called
     """
     def __init__(self):
-        self.time_overhead = 0.03
-        self.time_threshold = 75*1e-3 - self.time_overhead
+        self.time_overhead = 0
+        self.time_threshold = 75*1e-3
         self.time_start = None
         
     #Heuristic evaluation function v2.0, sums player score and sums up weighted distance to fish. 
@@ -114,17 +114,20 @@ class Minimax:
         best_node = children_nodes[0]
         for depth in range(2, 100):
             if (self.checktimeout()):
+                self.time_overhead = 0
                 return best_node
 
             best_value = -math.inf
 
             for child in children_nodes:
+                self.time_overhead = self.time_overhead + 0.0035
                 if(depth%2 == 1):
                     value = -self.minimaxAB(child, depth, -math.inf, math.inf, 0)
                 else:
                     value = self.minimaxAB(child, depth, -math.inf, math.inf, 0)
 
                 if (self.checktimeout()):
+                    self.time_overhead = 0
                     return best_node
 
                 if (value > best_value):  
@@ -136,7 +139,7 @@ class Minimax:
         return best_node
 
     def checktimeout(self):
-        if(time() - self.time_start <= self.time_threshold):
+        if((time() - self.time_start + self.time_overhead)<= self.time_threshold):
             return False
         else:
             return True
