@@ -1,23 +1,40 @@
 #!/usr/bin/env python3
 import random
 import math
+from typing import Counter
 from time import time
 
 from fishing_game_core.game_tree import Node
 from fishing_game_core.player_utils import PlayerController
 from fishing_game_core.shared import ACTION_TO_STR
+from operator import itemgetter
 
 class Minimax:
+
+    """
+    #counter for how many times heuristic is called (profiling...)
+    def counted(fn):
+        def wrapper(*args, **kwargs):
+            wrapper.called += 1
+            return fn(*args, **kwargs)
+        wrapper.called = 0
+        wrapper.__name__ = fn.__name__
+        return wrapper
+
+    def calls(self):
+        return self.heuristic.called
+    """
     def __init__(self):
         self.time_overhead = 0.03
         self.time_threshold = 75*1e-3 - self.time_overhead
         self.time_start = None
-    
+        
     #Heuristic evaluation function v2.0, sums player score and sums up weighted distance to fish. 
     #Takes into account both overall score and how good the hooks are positioned for each player.
     #When comparing different states, if the score favors opponent identically, this heuristic will give a better heuristic score to the state with better hook position (i.e. less negative).
     #Should uphold zero-sum game requirement.
-    #TODO: Account for caught fish. currently heuristic includes hooked fish into positional calculation for opponent!
+    #TODO: Account for caught fish. currently heuristic includes hooked fish into positional calculation for opposite player!
+    #@counted
     def heuristic(self, player, state):
         hookA = state.get_hook_positions()[0]
         hookB = state.get_hook_positions()[1]
@@ -55,13 +72,25 @@ class Minimax:
             return v
 
         children = node.compute_and_get_children()
+        #leaf/depth limit check
         if (depth==0 or len(children)==0):
             return self.heuristic(player,node.state)
 
+        #move ordering 
+        ordered_children = []         #list of tuples, tuple consists of the heuristic value of a child's state and the child object itself
+        for child in children:
+            ordered_children.append((self.heuristic(player,child.state),child))     #add tuple (heuristic value, child obj)
+        ordered_children.sort(key=itemgetter(0),reverse=True)  # sorts list by heuristic value in place 
+
+        """
+        for x in ordered_children:     #test...
+            print("heuristic val: "+str(x[0]))
+        """
+
         if player==0:           #player A
             v = -(math.inf)
-            for child in children:
-                v = max(v, self.minimaxAB(child,depth-1,a,b,1))
+            for child in ordered_children:
+                v = max(v, self.minimaxAB(child[1],depth-1,a,b,1))
                 a = max(a,v)
                 if b<=a:
                     break       #beta prune
@@ -70,8 +99,8 @@ class Minimax:
 
         else:                   #player B
             v = math.inf
-            for child in children:
-                v = min(v, self.minimaxAB(child,depth-1,a,b,0))
+            for child in ordered_children:
+                v = min(v, self.minimaxAB(child[1],depth-1,a,b,0))
                 b = min(b,v)
                 if b<=a:
                     break       #alpha prune
