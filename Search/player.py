@@ -89,8 +89,6 @@ class PlayerControllerMinimax(PlayerController):
         """
 
         # EDIT THIS METHOD TO RETURN BEST NEXT POSSIBLE MODE FROM MINIMAX MODEL ###
-
-
         children_nodes = initial_tree_node.compute_and_get_children()
         best_node = model.IDDFS(children_nodes, time())
 
