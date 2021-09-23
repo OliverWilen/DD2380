@@ -27,7 +27,7 @@ class Minimax:
     #Takes into account both overall score and how good the hooks are positioned for each player.
     #When comparing different states, if the score favors opponent identically, this heuristic will give a better heuristic score to the state with better hook position (i.e. less negative).
     #Should uphold zero-sum game requirement.
-    #TODO: Account for caught fish. currently heuristic includes hooked fish into positional calculation for opponent!
+    #TODO: Account for caught fish. currently heuristic includes hooked fish into positional calculation for opposite player!
     @counted
     def heuristic(self, player, state):
         hookA = state.get_hook_positions()[0]
@@ -46,11 +46,11 @@ class Minimax:
         stateVal = scoreA-scoreB+hA-hB
 
         #Should uphold zero-sum requirement that h(A,s)+h(B,s) = 0.
-        return (-player*stateVal - player*stateVal)
+        return ((1-player)*stateVal - player*stateVal)
         
 
     #Helper function to calculate inverse square distance between sets of coordinates.
-    def invSquareDist(this, tupleA, tupleB):
+    def invSquareDist(self, tupleA, tupleB):
         if(tupleA == tupleB):
             return 0
         x1,y1 = tupleA
@@ -67,13 +67,11 @@ class Minimax:
         if (depth==0 or len(children)==0):
             return self.heuristic(player,node.state)
 
-        """
         #move ordering 
         ordered_children = []         #list of tuples, tuple consists of the heuristic value of a child's state and the child object itself
         for child in children:
             ordered_children.append((self.heuristic(player,child.state),child))     #add tuple (heuristic value, child obj)
         ordered_children.sort(key=itemgetter(0),reverse=True)  # sorts list by heuristic value in place 
-        """
 
         """
         for x in ordered_children:     #test...
@@ -82,16 +80,16 @@ class Minimax:
 
         if player==0:           #player A
             v = -(math.inf)
-            for child in children:
-                v = max(v, self.minimaxAB(child,depth-1,a,b,1))
+            for child in ordered_children:
+                v = max(v, self.minimaxAB(child[1],depth-1,a,b,1))
                 a = max(a,v)
                 if b<=a:
                     break       #beta prune
 
         else:                   #player B
             v = math.inf
-            for child in children:
-                v = min(v, self.minimaxAB(child,depth-1,a,b,0))
+            for child in ordered_children:
+                v = min(v, self.minimaxAB(child[1],depth-1,a,b,0))
                 b = min(b,v)
                 if b<=a:
                     break       #alpha prune

@@ -23,7 +23,6 @@ class PlayerControllerHuman(PlayerController):
             # send message to game that you are ready
             msg = self.receiver()
             if msg["game_over"]:
-                Minimax.calls()
                 return
 
 
@@ -52,6 +51,9 @@ class PlayerControllerMinimax(PlayerController):
             # Possible next moves: "stay", "left", "right", "up", "down"
             best_move = self.search_best_next_move(
                 model=model, initial_tree_node=node)
+
+            #print n.of. calls to heuristic (profiling)
+            print("Calls: "+str(model.calls()))
 
             # Execute next action
             self.sender({"action": best_move, "search_time": None})
@@ -89,9 +91,6 @@ class PlayerControllerMinimax(PlayerController):
         """
 
         # EDIT THIS METHOD TO RETURN BEST NEXT POSSIBLE MODE FROM MINIMAX MODEL ###
-        pl = 0
-        state = initial_tree_node.state
-        h = model.heuristic(pl,state)
         depth = 2
 
         children_nodes = initial_tree_node.compute_and_get_children()
