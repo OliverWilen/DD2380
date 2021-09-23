@@ -30,7 +30,7 @@ class Minimax:
         stateVal = scoreA-scoreB+hA-hB
 
         #Should uphold zero-sum requirement that h(A,s)+h(B,s) = 0.
-        return (-player*stateVal - player*stateVal)
+        return ((1-player)*stateVal - player*stateVal)
         
 
     #Helper function to calculate inverse square distance between sets of coordinates.
