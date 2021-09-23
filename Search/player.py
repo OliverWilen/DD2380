@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import random
 import math
+from time import time
 from minimax import Minimax
 
 from fishing_game_core.game_tree import Node
@@ -91,17 +92,9 @@ class PlayerControllerMinimax(PlayerController):
         """
 
         # EDIT THIS METHOD TO RETURN BEST NEXT POSSIBLE MODE FROM MINIMAX MODEL ###
-        depth = 2
 
         children_nodes = initial_tree_node.compute_and_get_children()
-        best_v = -math.inf
-        best_node = children_nodes[0]
-        for child in children_nodes:
-            v = model.minimaxAB(child,depth,-math.inf,math.inf,0)
-            #print("child minimax value: " + str(v))
-            if v>best_v:
-                best_v = v
-                best_node = child
+        best_node = model.IDDFS(children_nodes, time())
 
         #print("best node minimax value: " + str(v))
 

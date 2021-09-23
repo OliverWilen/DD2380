@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 import random
 import math
-import time
 from typing import Counter
+from time import time
 
 from fishing_game_core.game_tree import Node
 from fishing_game_core.player_utils import PlayerController
@@ -10,6 +10,7 @@ from fishing_game_core.shared import ACTION_TO_STR
 from operator import itemgetter
 
 class Minimax:
+
     """
     #counter for how many times heuristic is called (profiling...)
     def counted(fn):
@@ -23,7 +24,11 @@ class Minimax:
     def calls(self):
         return self.heuristic.called
     """
-
+    def __init__(self):
+        self.time_overhead = 0.03
+        self.time_threshold = 75*1e-3 - self.time_overhead
+        self.time_start = None
+        
     #Heuristic evaluation function v2.0, sums player score and sums up weighted distance to fish. 
     #Takes into account both overall score and how good the hooks are positioned for each player.
     #When comparing different states, if the score favors opponent identically, this heuristic will give a better heuristic score to the state with better hook position (i.e. less negative).
@@ -63,6 +68,9 @@ class Minimax:
         b = beta
         v = 0.0
 
+        if (self.checktimeout()):
+            return v
+
         children = node.compute_and_get_children()
         #leaf/depth limit check
         if (depth==0 or len(children)==0):
@@ -86,6 +94,8 @@ class Minimax:
                 a = max(a,v)
                 if b<=a:
                     break       #beta prune
+                if (self.checktimeout()):
+                    return v
 
         else:                   #player B
             v = math.inf
@@ -94,5 +104,39 @@ class Minimax:
                 b = min(b,v)
                 if b<=a:
                     break       #alpha prune
+                if (self.checktimeout()):
+                    return v
 
         return v
+
+    def IDDFS(self, children_nodes, time_start):
+        self.time_start = time_start
+        best_node = children_nodes[0]
+        for depth in range(2, 100):
+            if (self.checktimeout()):
+                return best_node
+
+            best_value = -math.inf
+
+            for child in children_nodes:
+                if(depth%2 == 1):
+                    value = -self.minimaxAB(child, depth, -math.inf, math.inf, 0)
+                else:
+                    value = self.minimaxAB(child, depth, -math.inf, math.inf, 0)
+
+                if (self.checktimeout()):
+                    return best_node
+
+                if (value > best_value):  
+                    best_value = value
+                    temp_node = child
+
+            best_node = temp_node 
+
+        return best_node
+
+    def checktimeout(self):
+        if(time() - self.time_start <= self.time_threshold):
+            return False
+        else:
+            return True
