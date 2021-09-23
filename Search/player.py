@@ -23,6 +23,7 @@ class PlayerControllerHuman(PlayerController):
             # send message to game that you are ready
             msg = self.receiver()
             if msg["game_over"]:
+                Minimax.calls()
                 return
 
 
@@ -91,7 +92,7 @@ class PlayerControllerMinimax(PlayerController):
         pl = 0
         state = initial_tree_node.state
         h = model.heuristic(pl,state)
-        depth = 8
+        depth = 2
 
         children_nodes = initial_tree_node.compute_and_get_children()
         best_v = -math.inf
