@@ -92,7 +92,7 @@ class Minimax:
             for child in ordered_children:
                 v = max(v, self.minimaxAB(child[1],depth-1,a,b,1))
                 a = max(a,v)
-                if b<=a:
+                if b<=v:
                     break       #beta prune
                 if (self.checktimeout()):
                     return v
@@ -102,7 +102,7 @@ class Minimax:
             for child in ordered_children:
                 v = min(v, self.minimaxAB(child[1],depth-1,a,b,0))
                 b = min(b,v)
-                if b<=a:
+                if v<=a:
                     break       #alpha prune
                 if (self.checktimeout()):
                     return v
@@ -133,7 +133,7 @@ class Minimax:
                 if (value > best_value):  
                     best_value = value
                     temp_node = child
-
+                #print(depth)
             best_node = temp_node 
 
         return best_node
