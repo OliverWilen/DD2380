@@ -4,19 +4,13 @@ import math
 from typing import Counter
 from time import time
 
-from statehash import StateHash
 from fishing_game_core.game_tree import Node
 from fishing_game_core.player_utils import PlayerController
 from fishing_game_core.shared import ACTION_TO_STR
 from operator import itemgetter
 
 class Minimax:
-    def __init__(self):
-        self.time_overhead = 0
-        self.time_threshold = 75*1e-3
-        self.time_start = None
-        self.tt = StateHash()    
-    
+
     """
     #counter for how many times heuristic is called (profiling...)
     def counted(fn):
@@ -30,6 +24,10 @@ class Minimax:
     def calls(self):
         return self.heuristic.called
     """
+    def __init__(self):
+        self.time_overhead = 0
+        self.time_threshold = 75*1e-3
+        self.time_start = None
         
     #Heuristic evaluation function v2.0, sums player score and sums up weighted distance to fish. 
     #Takes into account both overall score and how good the hooks are positioned for each player.
@@ -58,20 +56,11 @@ class Minimax:
         
 
     #Helper function to calculate inverse square distance between sets of coordinates.
-    def invSquareDist(this, tupleA, tupleB):
-        #check equality
+    def invSquareDist(self, tupleA, tupleB):
         if(tupleA == tupleB):
             return 0
         x1,y1 = tupleA
         x2,y2 = tupleB
-        #adjust coordinates to account for "horizontal roll". I.e. if x1 = 0 and x2 = 19, the distance is 1, not 19.
-        #if there's a distance greater or equal to 10 between the two points, they are closer to each other by going through the world border than trough the open field.
-        if x1+10<x2:
-            x2 = x2-20
-        else:
-            if x2+10<x1:
-                x1 = x1-20
-
         return 1/(math.sqrt(math.pow(x2-x1,2) + math.pow(y2-y1,2)))
 
     def minimaxAB(self, node, depth, alpha, beta, player):
@@ -85,12 +74,7 @@ class Minimax:
         children = node.compute_and_get_children()
         #leaf/depth limit check
         if (depth==0 or len(children)==0):
-            #check transposition table if state has been visited
-            h = self.tt.get(node.state)
-            if h=="empty":
-                h = self.heuristic(player,node.state)
-                self.tt.add(node.state,h)
-            return h
+            return self.heuristic(player,node.state)
 
         #move ordering 
         ordered_children = []         #list of tuples, tuple consists of the heuristic value of a child's state and the child object itself
