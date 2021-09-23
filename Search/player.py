@@ -92,16 +92,7 @@ class PlayerControllerMinimax(PlayerController):
 
 
         children_nodes = initial_tree_node.compute_and_get_children()
-        best_v = -math.inf
-        best_node = children_nodes[0]
-        time_start = time()
-        for child in children_nodes:
-            v = model.IDDFS(child, time_start)
-            #v = model.minimaxAB(child, 2, -math.inf, math.inf, 0)
-            #print("child minimax value: " + str(v))
-            if v>best_v:
-                best_v = v
-                best_node = child
+        best_node = model.IDDFS(children_nodes, time())
 
         #print("best node minimax value: " + str(v))
 

@@ -9,7 +9,7 @@ from fishing_game_core.shared import ACTION_TO_STR
 
 class Minimax:
     def __init__(self):
-        self.time_overhead = 0.02
+        self.time_overhead = 0.03
         self.time_threshold = 75*1e-3 - self.time_overhead
         self.time_start = None
     
@@ -51,6 +51,9 @@ class Minimax:
         b = beta
         v = 0.0
 
+        if (self.checktimeout()):
+            return v
+
         children = node.compute_and_get_children()
         if (depth==0 or len(children)==0):
             return self.heuristic(player,node.state)
@@ -63,7 +66,7 @@ class Minimax:
                 if b<=a:
                     break       #beta prune
                 if (self.checktimeout()):
-                    break
+                    return v
 
         else:                   #player B
             v = math.inf
@@ -73,24 +76,37 @@ class Minimax:
                 if b<=a:
                     break       #alpha prune
                 if (self.checktimeout()):
-                    break 
+                    return v
 
         return v
 
-    def IDDFS(self, root, time_start):
+    def IDDFS(self, children_nodes, time_start):
         self.time_start = time_start
-        value = -math.inf
-        depth = 0
-        while True:
-            value = self.minimaxAB(root, depth, -math.inf, math.inf, 0)
-            if (self.checktimeout() | depth == 2):
-                break
-            depth = depth + 1
-            #print(depth)
-        return value
+        best_node = children_nodes[0]
+        for depth in range(2, 100):
+            if (self.checktimeout()):
+                return best_node
+
+            best_value = -math.inf
+
+            for child in children_nodes:
+                if(depth%2 == 1):
+                    value = -self.minimaxAB(child, depth, -math.inf, math.inf, 0)
+                else:
+                    value = self.minimaxAB(child, depth, -math.inf, math.inf, 0)
+
+                if (self.checktimeout()):
+                    return best_node
+
+                if (value > best_value):  
+                    best_value = value
+                    temp_node = child
+
+            best_node = temp_node 
+
+        return best_node
 
     def checktimeout(self):
-        #print(str(time()) + " " + str(self.time_start) + " " + str(self.time_threshold))
         if(time() - self.time_start <= self.time_threshold):
             return False
         else:
