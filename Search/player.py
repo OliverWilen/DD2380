@@ -91,12 +91,13 @@ class PlayerControllerMinimax(PlayerController):
         pl = 0
         state = initial_tree_node.state
         h = model.heuristic(pl,state)
+        depth = 8
 
         children_nodes = initial_tree_node.compute_and_get_children()
-        best_v = -float(math.inf)
+        best_v = -math.inf
         best_node = children_nodes[0]
         for child in children_nodes:
-            v = model.minimaxAB(child,32,0,0,0)
+            v = model.minimaxAB(child,depth,-math.inf,math.inf,0)
             #print("child minimax value: " + str(v))
             if v>best_v:
                 best_v = v
