@@ -27,7 +27,7 @@ def makeMatrix(line):
         matrix.append(row)
     return matrix
 
-
+#TODO!! use log values to prevent underflow in floats! :)
 def deltaAlgorithm(A, B, pi, O):
     N = len(A)
     K = len(B)
