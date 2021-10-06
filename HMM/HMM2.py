@@ -61,36 +61,50 @@ def matrixToString(matrix):
     return string
 
 def deltaAlgorithm(A, B, pi, O):
-    delta = []
-    deltaidx = []
-    temp = []
-    for i in range(0, len(A)):
+    N = len(A)
+    K = len(B)
+    T = len(O)
+    delta = []      #delta matrix; each value represents probability that state was reached if optimal path was used. index 0 represents time depth, index 1 represents state.
+    deltaidx = []   #delta index matrix; each value corresponds to a state in delta, and represents the parent state which most likely lead to this state.
+    temp = []       
+    #calculate first iteration of delta 
+    for i in range(0, N):
         temp.append(pi[0][i]*B[i][O[0]])
 
     delta.append(temp)
 
-    for o in range(1, len(O)):
+    #calculate rest of delta matrix
+    #for each observation in the sequence:
+    for o in range(1, T):
         delta.append([])
         deltaidx.append([])
-        for i in range(0, len(A)):
-            step = []
-            for j in range(0, len(A)):
-                step.append(A[j][i]*delta[o-1][j]*B[i][o])
-
-            maxvalue = max(step)    
+        #for each state in this delta matrix row:
+        for i in range(0, N):
+            possibleEntries = []
+            #for each possible path to state i:
+            for j in range(0, N):
+                possibleDelta = A[j][i]*delta[o-1][j]*B[i][O[o]]
+                possibleEntries.append(possibleDelta)
+            #only add the greatest value to delta, also add the associated parent state in deltaidx.
+            maxvalue = max(possibleEntries)    
             delta[o].append(maxvalue)
-            deltaidx[o-1].append(step.index(maxvalue))
+            deltaidx[o-1].append(possibleEntries.index(maxvalue))
 
+    #calculating the optimal path
+    #start the sequence with the most probable state in time step T, then traverse parent nodes backwards from that point.
     sequence = []
     sequence.append(delta[len(O)-1].index(max(delta[len(O)-1])))
-    print(delta)
-    print(deltaidx)
-
-    for t in range(1, len(O)):
+    for t in range(1, T):
         sequence.append(deltaidx.pop()[sequence[t-1]])
-
-    return sequence
-        
+    sequence.reverse()
+    return vectorToString(sequence)
+    
+#formatting output       
+def vectorToString(vector):
+    string = ""
+    for value in vector:
+        string += " " + str(value)
+    return string
 
 A,B,pi,O = parseIn(sys.stdin)
 
