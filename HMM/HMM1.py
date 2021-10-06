@@ -28,26 +28,6 @@ def makeMatrix(line):
     return matrix
 
 """
-Matrix multiplication usign two dimentional arrays
-"""
-def matrixMul(A, B):
-    result = []
-    for row in A:
-        resultCol = []
-        for col in list(zip(*B)):
-            products = [a * b for a, b in zip(row, col)]
-            resultCol.append(sum(products))
-        result.append(resultCol)
-    return result
-
-"""
-Calculates the next transition observation vector based on a previous state probability
-vector (pi), transition matrix (A) and emission matrix(B)
-"""
-def nextTransitionObservation(A,B,pi):
-    return matrixMul(matrixMul(pi, A), B) 
-
-"""
 Converts a matrix represented as a two dimentional array into a string.
 The two first numbers define the size of the matrix
 """
