@@ -61,15 +61,14 @@ def matrixToString(matrix):
             string += " " + str(value)
     return string
 
-#alpha-pass algorithm
-def forwardAlgorithm(A, B, pi, O):
+#alpha-pass algorithm, runs over observations 0 -> t_end
+def forwardAlgorithm(A, B, pi, O, t_end):
     templist = []
     for i in range(0, len(A)):
         templist.append(pi[0][i]*B[i][O[0]])
-
     alpha = templist
     
-    for t in range(1, len(O)):
+    for t in range(1, t_end):
         templist = []
         for i in range(0, len(A)):
             s = 0
@@ -81,15 +80,15 @@ def forwardAlgorithm(A, B, pi, O):
         alpha = templist
     return alpha
  
-#beta-pass algorithm          
-def backwardAlgorithm(A, B, pi, O):
+#beta-pass algorithm, runs over observations T -> t_start        
+def backwardAlgorithm(A, B, O, t_start):
     templist = []
     for i in range(0, len(A)):
         templist.append(1.0)
 
     beta = templist
 
-    for t in range(1, len(O)):
+    for t in range(1, t_start):
         templist = []
         for i in range(0, len(A)):
             s = 0
@@ -101,32 +100,17 @@ def backwardAlgorithm(A, B, pi, O):
         beta = templist
     return beta
 
-#gamma function
-def gamma(t, i, A, B, pi):
-    S = 0
-    N = len(A)
-    T = len(O)
+#gamma function, marginalizes di-gamma over states so that parameter j can be omitted.
+def gamma(t, i, A, B, pi, O, c):
+    g = 0
+    for j in range(0, len(A)):
+        g += di_gamma(t, i, j, A, B, pi, O, c)
+    return g
 
-    for j in range(0, N):
-        S += di_gamma(t, i, j, N, T)
-    return S
-
-#di-gamma function
-def di_gamma(t, i, j, A, B, pi):
-    N = len(A)
-    T = len(O)
-
-    g = []  
-    dg = []
-    for t in range(0, T-1):
-        for i in range(0, N):
-            g[i] = 0
-            for j in range(0, N):   
-                dg[i][j] = forwardAlgorithm(t, i, A, B, pi, O) * A[i][j]  * B[j][O[t+1]] * backwardAlgorithm(t+1, i, A, B, pi, O)
-                g[i] += dg[i][j]
-            gammavalue = g[i]
-
-    return 
+#di-gamma function, returns di-gamma evaluation for a specific state (i,j,t)
+def di_gamma(t, i, j, A, B, pi, O, c):
+    dg = forwardAlgorithm(A, B, pi, O, t) * A[i][j] * B[j][O[t+1]] * backwardAlgorithm(A, B, O, t+1)
+    return dg/c
 
 #Runs the overall structure of the Baum-Welch algorithm.
 def Baum_Welch(A, B, pi, O):
@@ -135,6 +119,7 @@ def Baum_Welch(A, B, pi, O):
     oldlogProb = -math.inf
     N = len(A)
     T = len(O)
+    c = forwardAlgorithm(A, B, pi, O, T) #normalization factor used in di-gamma.
 
     #re-estimate pi
     for i in range(0, N):
