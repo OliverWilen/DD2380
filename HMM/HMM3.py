@@ -152,10 +152,12 @@ def Baum_Welch(A, B, pi, O):
             
                 B[i][j] = numer/demon
 
+        #Calculate the log of the observations with the new estimations
         logprob = 0
         for t in range(0, T):
             logprob -= sum(forwardAlgorithm(A, B, pi, O, t))
 
+        #Stop looping if the probabilities coverge or maximum iterations is reached
         if (iters < maxIters and logprob > oldlogProb):
                 oldlogProb = logprob
         else:
