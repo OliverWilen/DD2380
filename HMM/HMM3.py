@@ -99,27 +99,32 @@ def forwardAlgorithm(A, B, pi, O):
 def backwardAlgorithm(A, B, O, c):
     templist = []
     beta = []
+
     for i in range(0, len(A)):
-        templist.append(1.0 * c[len(O)-1])
+        templist.append(c[-1])
 
     beta.append(templist)
 
-    for t in range(1, len(O)):  
+    for t in range(len(O)-2, -1, -1):  
         templist = []
         for i in range(0, len(A)):
             s = 0
             for j in range(0, len(A)):
-                s += beta[t-1][j] * B[j][O[len(O)-t]] * A[i][j]
+                s += beta[-1][j] * B[j][O[t+1]] * A[i][j]
             
             templist.append(s * c[t])
             
         beta.append(templist)
-        beta.reverse()
+
+    beta.reverse()
     return beta
 
 #gamma function, marginalizes di-gamma over states so that parameter j can be omitted.
 def gamma(t, i, A, B, pi, O, alpha, beta):
     g = 0
+    if (t == len(O) - 1):
+        return alpha[t][i]
+
     for j in range(0, len(A)):
         g += di_gamma(t, i, j, A, B, pi, O, alpha, beta)
     return g
@@ -131,7 +136,7 @@ def di_gamma(t, i, j, A, B, pi, O, alpha, beta):
 
 #Runs the overall structure of the Baum-Welch algorithm.
 def Baum_Welch(A, B, pi, O):
-    maxIters = 1000
+    maxIters = 1000000
     iters = 0
     oldlogProb = -math.inf
     N = len(A)
@@ -140,8 +145,8 @@ def Baum_Welch(A, B, pi, O):
     alpha, c = forwardAlgorithm(A, B, pi, O)
     beta = backwardAlgorithm(A, B, O, c)
 
+
     while(True):
-        #print(iters)
         #re-estimate pi
         for i in range(0, N):
             pi[0][i] = gamma(0, i, A, B, pi, O, alpha, beta)
@@ -162,16 +167,17 @@ def Baum_Welch(A, B, pi, O):
         #re-estimate B
         for i in range(0, N):
             denom = 0
-            for t in range(0, T-1):
+            for t in range(0, T):
                 denom += gamma(t, i, A, B, pi, O, alpha, beta)
             
             for j in range(j, N):
                 numer = 0
-                for t in range(0, T-1):
+                for t in range(0, T):
                     if(O[t] == j):
                         numer += gamma(t, i, A, B, pi, O, alpha, beta)
             
                 B[i][j] = numer/denom
+
 
         #Calculate the log of the observations with the new estimations
         alpha, c = forwardAlgorithm(A, B, pi, O)
