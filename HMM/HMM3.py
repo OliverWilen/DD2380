@@ -72,9 +72,8 @@ def forwardAlgorithm(A, B, pi, O):
         c[0] += a
         templist.append(a)
     #scale values with norm. facor.
-    c[0] = 1/c[0]
     for i in range(0, len(A)):
-        templist[i] = templist[i]*c[0]
+        templist[i] = templist[i]/c[0]
     alpha.append(templist)
     
     #calculate succeeding time steps until O
@@ -89,9 +88,8 @@ def forwardAlgorithm(A, B, pi, O):
             c[t] += a
             templist.append(a)
         #scale values at current time step with norm. factor
-        c[t] = 1/c[t]
         for i in range(0, len(A)):
-            templist[i] = templist[i]*c[t]
+            templist[i] = templist[i]/c[t]
         alpha.append(templist)
     return alpha, c
  
@@ -101,18 +99,18 @@ def backwardAlgorithm(A, B, O, c):
     beta = []
 
     for i in range(0, len(A)):
-        templist.append(c[-1])
+        templist.append(1 / c[-1])
 
     beta.append(templist)
 
     for t in range(len(O)-2, -1, -1):  
         templist = []
         for i in range(0, len(A)):
-            s = 0
+            b = 0
             for j in range(0, len(A)):
-                s += beta[-1][j] * B[j][O[t+1]] * A[i][j]
+                b += beta[-1][j] * B[j][O[t+1]] * A[i][j]
             
-            templist.append(s * c[t])
+            templist.append(b / c[t])
             
         beta.append(templist)
 
@@ -124,10 +122,10 @@ def gamma(t, i, A, B, pi, O, alpha, beta):
     g = 0
     if (t == len(O) - 1):
         return alpha[t][i]
-
-    for j in range(0, len(A)):
-        g += di_gamma(t, i, j, A, B, pi, O, alpha, beta)
-    return g
+    else:
+        for j in range(0, len(A)):
+            g += di_gamma(t, i, j, A, B, pi, O, alpha, beta)
+        return g
 
 #di-gamma function, returns di-gamma evaluation for a specific state (i,j,t)
 def di_gamma(t, i, j, A, B, pi, O, alpha, beta):
@@ -136,10 +134,11 @@ def di_gamma(t, i, j, A, B, pi, O, alpha, beta):
 
 #Runs the overall structure of the Baum-Welch algorithm.
 def Baum_Welch(A, B, pi, O):
-    maxIters = 1000000
+    maxIters = 100
     iters = 0
     oldlogProb = -math.inf
     N = len(A)
+    M = len(B)
     T = len(O)
 
     alpha, c = forwardAlgorithm(A, B, pi, O)
@@ -170,7 +169,7 @@ def Baum_Welch(A, B, pi, O):
             for t in range(0, T):
                 denom += gamma(t, i, A, B, pi, O, alpha, beta)
             
-            for j in range(j, N):
+            for j in range(0, M):
                 numer = 0
                 for t in range(0, T):
                     if(O[t] == j):
@@ -180,14 +179,13 @@ def Baum_Welch(A, B, pi, O):
 
 
         #Calculate the log of the observations with the new estimations
-        alpha, c = forwardAlgorithm(A, B, pi, O)
-        beta = backwardAlgorithm(A, B, O, c)
         logprob = -sum([math.log(1/ct, 10) for ct in c])
         iters += 1
-        
         #Stop looping if the probabilities coverge or maximum iterations is reached
         if (iters < maxIters and logprob > oldlogProb):
                 oldlogProb = logprob
+                alpha, c = forwardAlgorithm(A, B, pi, O)
+                beta = backwardAlgorithm(A, B, O, c)
         else:
             return A, B
 
