@@ -131,7 +131,7 @@ def di_gamma(t, i, j, A, B, pi, O, alpha, beta):
 
 #Runs the overall structure of the Baum-Welch algorithm.
 def Baum_Welch(A, B, pi, O):
-    maxIters = 100
+    maxIters = 1000
     iters = 0
     oldlogProb = -math.inf
     N = len(A)
@@ -141,7 +141,7 @@ def Baum_Welch(A, B, pi, O):
     beta = backwardAlgorithm(A, B, O, c)
 
     while(True):
-        print("hej")
+        #print(iters)
         #re-estimate pi
         for i in range(0, N):
             pi[0][i] = gamma(0, i, A, B, pi, O, alpha, beta)
@@ -176,7 +176,7 @@ def Baum_Welch(A, B, pi, O):
         #Calculate the log of the observations with the new estimations
         alpha, c = forwardAlgorithm(A, B, pi, O)
         beta = backwardAlgorithm(A, B, O, c)
-        logprob = -sum(c)
+        logprob = -sum([math.log(1/ct, 10) for ct in c])
         iters += 1
         
         #Stop looping if the probabilities coverge or maximum iterations is reached
