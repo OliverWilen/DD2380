@@ -101,16 +101,16 @@ def backwardAlgorithm(A, B, O, t_start):
     return beta
 
 #gamma function, marginalizes di-gamma over states so that parameter j can be omitted.
-def gamma(t, i, A, B, pi, O, c):
+def gamma(t, i, A, B, pi, O:
     g = 0
     for j in range(0, len(A)):
-        g += di_gamma(t, i, j, A, B, pi, O, c)
+        g += di_gamma(t, i, j, A, B, pi, O)
     return g
 
 #di-gamma function, returns di-gamma evaluation for a specific state (i,j,t)
-def di_gamma(t, i, j, A, B, pi, O, c):
+def di_gamma(t, i, j, A, B, pi, O):
     dg = forwardAlgorithm(A, B, pi, O, t) * A[i][j] * B[j][O[t+1]] * backwardAlgorithm(A, B, O, t+1)
-    return dg/c
+    return dg
 
 #Runs the overall structure of the Baum-Welch algorithm.
 def Baum_Welch(A, B, pi, O):
@@ -119,38 +119,47 @@ def Baum_Welch(A, B, pi, O):
     oldlogProb = -math.inf
     N = len(A)
     T = len(O)
-    c = forwardAlgorithm(A, B, pi, O, T) #normalization factor used in di-gamma.
 
-    #re-estimate pi
-    for i in range(0, N):
-        pi[0][i] = gamma(0, i, A, B, pi)
+    while(True):
+        #re-estimate pi
+        for i in range(0, N):
+            pi[0][i] = gamma(0, i, A, B, pi)
 
-    #re-estimate A
-    for i in range(0, N):
-        denom = 0
-        for t in range(0, T-1):
-            denom += gamma(t, i, A, B, pi)
-        
-        for j in range(j, N):
-            numer = 0
+        #re-estimate A
+        for i in range(0, N):
+            denom = 0
             for t in range(0, T-1):
-                numer += di_gamma(t, i, j, A, B, pi)
-        
-            A[i][j] = numer/demon
+                denom += gamma(t, i, A, B, pi)
+            
+            for j in range(j, N):
+                numer = 0
+                for t in range(0, T-1):
+                    numer += di_gamma(t, i, j, A, B, pi)
+            
+                A[i][j] = numer/demon
 
-    #re-estimate B
-    for i in range(0, N):
-        denom = 0
-        for t in range(0, T-1):
-            denom += gamma(t, i, A, B, pi)
-        
-        for j in range(j, N):
-            numer = 0
+        #re-estimate B
+        for i in range(0, N):
+            denom = 0
             for t in range(0, T-1):
-                if(O[t] == j):
-                    numer += gamma(t, i, A, B, pi)
-        
-            B[i][j] = numer/demon
+                denom += gamma(t, i, A, B, pi)
+            
+            for j in range(j, N):
+                numer = 0
+                for t in range(0, T-1):
+                    if(O[t] == j):
+                        numer += gamma(t, i, A, B, pi)
+            
+                B[i][j] = numer/demon
+
+        logprob = 0
+        for t in range(0, T):
+            logprob -= sum(forwardAlgorithm(A, B, pi, O, t))
+
+        if (iters < maxIters and logprob > oldlogProb):
+                oldlogProb = logprob
+        else:
+            return[A, B]
 
     return ""
 
