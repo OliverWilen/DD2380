@@ -63,20 +63,34 @@ def matrixToString(matrix):
 
 #alpha-pass algorithm, runs over observations 0 -> t_end
 def forwardAlgorithm(A, B, pi, O, t_end):
+    #calculate initial time step
     templist = []
+    c_0 = 0
     for i in range(0, len(A)):
-        templist.append(pi[0][i]*B[i][O[0]])
+        a = pi[0][i]*B[i][O[0]]
+        c_0 += a
+        templist.append(a)
+    #scale values with norm. facor.
+    c_0 = 1/c_0
+    for i in range(0, len(A)):
+        templist[i] = templist[i]*c_0
     alpha = templist
     
+    #calculate succeeding time steps until t_end
     for t in range(1, t_end):
         templist = []
+        c = 0
         for i in range(0, len(A)):
             s = 0
             for j in range(0, len(A)):
                 s += alpha[j]*A[j][i]
-            
-            templist.append(s*B[i][O[t]])
-            
+            a = s*B[i][O[t]]
+            c += a
+            templist.append(a)
+        #scale values at current time step with norm. factor
+        c = 1/c
+        for i in range(0, len(A)):
+            templist[i] = templist[i]*c
         alpha = templist
     return alpha
  
@@ -101,16 +115,16 @@ def backwardAlgorithm(A, B, O, t_start):
     return beta
 
 #gamma function, marginalizes di-gamma over states so that parameter j can be omitted.
-def gamma(t, i, A, B, pi, O, c):
+def gamma(t, i, A, B, pi, O):
     g = 0
     for j in range(0, len(A)):
-        g += di_gamma(t, i, j, A, B, pi, O, c)
+        g += di_gamma(t, i, j, A, B, pi, O)
     return g
 
 #di-gamma function, returns di-gamma evaluation for a specific state (i,j,t)
-def di_gamma(t, i, j, A, B, pi, O, c):
+def di_gamma(t, i, j, A, B, pi, O):
     dg = forwardAlgorithm(A, B, pi, O, t) * A[i][j] * B[j][O[t+1]] * backwardAlgorithm(A, B, O, t+1)
-    return dg/c
+    return dg
 
 #Runs the overall structure of the Baum-Welch algorithm.
 def Baum_Welch(A, B, pi, O):
@@ -119,7 +133,6 @@ def Baum_Welch(A, B, pi, O):
     oldlogProb = -math.inf
     N = len(A)
     T = len(O)
-    c = forwardAlgorithm(A, B, pi, O, T) #normalization factor used in di-gamma.
 
     #re-estimate pi
     for i in range(0, N):
