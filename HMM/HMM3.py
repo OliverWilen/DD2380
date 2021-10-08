@@ -138,7 +138,7 @@ def Baum_Welch(A, B, pi, O):
     iters = 0
     oldlogProb = -math.inf
     N = len(A)
-    M = len(B)
+    M = len(B[0])
     T = len(O)
 
     alpha, c = forwardAlgorithm(A, B, pi, O)
