@@ -69,15 +69,20 @@ def Baum_Welch(A, B, pi, O):
     iters = 0
     oldlogProb = -math.inf
     N = len(A)
+    M = len(B[0])
     T = len(O)
 
     while(True):
         #alpha matrix
-        alpha = []
+        alpha = [[0 for col in range(N)] for row in range(T)]
         #beta matrix
-        beta = []
+        beta = [[0 for col in range(N)] for row in range(T)]
         #alpha scaling values
-        c = []
+        c = [0] * T
+
+        gamma = [[0 for col in range(N)] for row in range(T)]
+
+        di_gamma = []
 #--------------------------#alpha pass#--------------------------#
         #initial time step
         c.append(0)
@@ -109,6 +114,13 @@ def Baum_Welch(A, B, pi, O):
         #scale beta_T with c_T
         
 #-----------------------#di-gamma and gamma#---------------------#       
+
+
+        for t in range(0, T-1):
+            for i in range(0, N):
+                gamma_val = 0
+                for j in range(0, N):
+
 
 #--------------------#estimate new parameters#-------------------#
         #re-estimate pi
