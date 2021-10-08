@@ -3,6 +3,8 @@ import fileinput
 import sys
 import math
 
+from HMM3 import gamma
+
 """
 Takes the input string and converst the first three lines to matrices.
 """
@@ -61,91 +63,54 @@ def matrixToString(matrix):
             string += " " + str(value)
     return string
 
-#alpha-pass algorithm
-def forwardAlgorithm(A, B, pi, O):
-    #calculate initial time step
-    templist = []
-    alpha = []
-    c = [0]
-    for i in range(0, len(A)):
-        a = pi[0][i]*B[i][O[0]]
-        c[0] += a
-        templist.append(a)
-    #scale values with norm. facor.
-    for i in range(0, len(A)):
-        templist[i] = templist[i]/c[0]
-    alpha.append(templist)
-    
-    #calculate succeeding time steps until O
-    for t in range(1, len(O)):
-        templist = []
-        c.append(0)
-        for i in range(0, len(A)):
-            s = 0
-            for j in range(0, len(A)):
-                s += alpha[t-1][j]*A[j][i]
-            a = s*B[i][O[t]]
-            c[t] += a
-            templist.append(a)
-        #scale values at current time step with norm. factor
-        for i in range(0, len(A)):
-            templist[i] = templist[i]/c[t]
-        alpha.append(templist)
-    return alpha, c
- 
-#beta-pass algorithm      
-def backwardAlgorithm(A, B, O, c):
-    templist = []
-    beta = []
-
-    for i in range(0, len(A)):
-        templist.append(1 / c[-1])
-
-    beta.append(templist)
-
-    for t in range(len(O)-2, -1, -1):  
-        templist = []
-        for i in range(0, len(A)):
-            b = 0
-            for j in range(0, len(A)):
-                b += beta[-1][j] * B[j][O[t+1]] * A[i][j]
-            
-            templist.append(b / c[t])
-            
-        beta.append(templist)
-
-    beta.reverse()
-    return beta
-
-#gamma function, marginalizes di-gamma over states so that parameter j can be omitted.
-def gamma(t, i, A, B, pi, O, alpha, beta):
-    g = 0
-    if (t == len(O) - 1):
-        return alpha[t][i]
-    else:
-        for j in range(0, len(A)):
-            g += di_gamma(t, i, j, A, B, pi, O, alpha, beta)
-        return g
-
-#di-gamma function, returns di-gamma evaluation for a specific state (i,j,t)
-def di_gamma(t, i, j, A, B, pi, O, alpha, beta):
-    dg = alpha[t][i] * A[i][j] * B[j][O[t+1]] * beta[t+1][j]
-    return dg
-
 #Runs the overall structure of the Baum-Welch algorithm.
 def Baum_Welch(A, B, pi, O):
-    maxIters = 100
+    maxIters = 1000000
     iters = 0
     oldlogProb = -math.inf
     N = len(A)
-    M = len(B)
     T = len(O)
 
-    alpha, c = forwardAlgorithm(A, B, pi, O)
-    beta = backwardAlgorithm(A, B, O, c)
-
-
     while(True):
+        #alpha matrix
+        alpha = []
+        #beta matrix
+        beta = []
+        #alpha scaling values
+        c = []
+#--------------------------#alpha pass#--------------------------#
+        #initial time step
+        c.append(0)
+        alpha.append([])
+        for i in range (0, N):
+            alpha[0].append(pi[i]*B[i][O[0]])
+            c[0] += alpha[0][i]
+        #scale alpha
+        c[0] = 1/c[0]
+        for value in alpha[0]:
+            value *= c[0]
+
+        #general case
+        for t in range(1, T):
+            c[t] = 0
+            alpha.append([])
+            for i in range(0, N):
+                alpha[t].append([])
+                alpha_val = 0
+                for j in range(0, N):
+                    alpha_val += alpha[t-1][j]*A[j][i]
+                alpha[t][i] = alpha_val*B[i][O[t]]
+                c[t] += alpha[t][i]
+            #scale alpha
+            c[t] = 1/c[t]
+            for value in alpha[t]:
+                value *= c[t]
+#---------------------------#beta pass#--------------------------#
+        #scale beta_T with c_T
+        
+#-----------------------#di-gamma and gamma#---------------------#       
+
+#--------------------#estimate new parameters#-------------------#
         #re-estimate pi
         for i in range(0, N):
             pi[0][i] = gamma(0, i, A, B, pi, O, alpha, beta)
@@ -169,22 +134,24 @@ def Baum_Welch(A, B, pi, O):
             for t in range(0, T):
                 denom += gamma(t, i, A, B, pi, O, alpha, beta)
             
-            for j in range(0, M):
+            for j in range(j, N):
                 numer = 0
                 for t in range(0, T):
                     if(O[t] == j):
                         numer += gamma(t, i, A, B, pi, O, alpha, beta)
+            
                 B[i][j] = numer/denom
 
 
         #Calculate the log of the observations with the new estimations
+        alpha, c = forwardAlgorithm(A, B, pi, O)
+        beta = backwardAlgorithm(A, B, O, c)
         logprob = -sum([math.log(1/ct, 10) for ct in c])
         iters += 1
+        
         #Stop looping if the probabilities coverge or maximum iterations is reached
         if (iters < maxIters and logprob > oldlogProb):
                 oldlogProb = logprob
-                alpha, c = forwardAlgorithm(A, B, pi, O)
-                beta = backwardAlgorithm(A, B, O, c)
         else:
             return A, B
 
@@ -193,4 +160,3 @@ resultA, resultB = Baum_Welch(A, B, pi, O)
 
 print(matrixToString(resultA))
 print(matrixToString(resultB))
-
