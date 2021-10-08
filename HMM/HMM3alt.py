@@ -71,7 +71,6 @@ def Baum_Welch(A, B, pi, O):
     T = len(O)
 
     while(True):
-        print(iters)
 #-----------------------#initializations#-----------------------#        
         #alpha matrix
         alpha = [[0 for i in range(N)] for t in range(T)]
@@ -79,11 +78,11 @@ def Baum_Welch(A, B, pi, O):
         beta = [[0 for i in range(N)] for t in range(T)]
         #alpha scaling values
         c = [0] * T
-        print(c)
         #gamma matrix
         gamma = [[0 for i in range(N)] for t in range(T)]
         #di gamma matrix
-        di_gamma = [[[0 for j in range(M)] for i in range(N)] for t in range(T)]
+        di_gamma = [[[0 for j in range(N)] for i in range(N)] for t in range(T)]
+
 #--------------------------#alpha pass#--------------------------#
         #initial time step
         for i in range (0, N):
@@ -91,34 +90,32 @@ def Baum_Welch(A, B, pi, O):
             c[0] += alpha[0][i]
         #scale alpha
         c[0] = 1/c[0]
-        for value in alpha[0]:
-            value *= c[0]
+        for i in range(0, N):
+            alpha[0][i] = alpha[0][i] * c[0]
 
         #general case
         for t in range(1, T):
             for i in range(0, N):
-                alpha_val = 0
                 for j in range(0, N):
-                    alpha[t][i] += alpha[t-1][j]*A[j][i]
-                alpha[t][i] *= B[i][O[t]]
+                    alpha[t][i] += alpha[t-1][j] * A[j][i]
+                alpha[t][i] = alpha[t][i] * B[i][O[t]]
                 c[t] += alpha[t][i]
             #scale alpha
             c[t] = 1/c[t]
-            for value in alpha[t]:
-                value *= c[t]
+            for i in range(0, N):
+                alpha[t][i]= alpha[t][i] * c[t]
 #---------------------------#beta pass#--------------------------#
         #scale initial value
         for i in range(0, N):
-            beta[0][i] = c[0]
+            beta[-1][i] = c[-1]
 
         #general case
-        for t in range(T-1, -1):
+        for t in range(T-2, -1, -1):
             for i in range(0, N):
                 bt = 0
                 for j in range(0, N):
-                    bt += A[i][j] * B[j][O[t]] * beta[t+1][j]
-                bt *= c[t]
-                beta[t][i] = bt
+                    beta[t][i] += A[i][j] * B[j][O[t]] * beta[t+1][j]
+                beta[t][i] = beta[t][i] * c[t]
         
 #-----------------------#di-gamma and gamma#---------------------#       
         #Compude gamma and di gamma
@@ -126,7 +123,7 @@ def Baum_Welch(A, B, pi, O):
             for i in range(0, N):
                 for j in range(0, N):
                     di_gamma[t][i][j] = alpha[t][i]*A[i][j]*B[j][O[t+1]]*beta[t+1][j]
-                    gamma[t][i] += di_gamma
+                    gamma[t][i] += di_gamma[t][i][j]
 
         #Special case for gamma[t-1]
         for i in range(0, N):
@@ -155,7 +152,7 @@ def Baum_Welch(A, B, pi, O):
             for t in range(0, T):
                 denom += gamma[t][i]
             
-            for j in range(j, N):
+            for j in range(0, M):
                 numer = 0
                 for t in range(0, T):
                     if(O[t] == j):
@@ -163,9 +160,8 @@ def Baum_Welch(A, B, pi, O):
             
                 B[i][j] = numer/denom
 
-
         #Calculate the log of the observations with the new estimations
-        logprob = -sum([math.log(1/ct, 10) for ct in c])
+        logprob = -sum([math.log(ct, 10) for ct in c])
         iters += 1
         
         #Stop looping if the probabilities coverge or maximum iterations is reached
