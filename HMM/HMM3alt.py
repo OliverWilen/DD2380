@@ -73,16 +73,17 @@ def Baum_Welch(A, B, pi, O):
     T = len(O)
 
     while(True):
+#-----------------------#initializations#-----------------------#        
         #alpha matrix
-        alpha = [[0 for col in range(N)] for row in range(T)]
+        alpha = [[0 for i in range(N)] for t in range(T)]
         #beta matrix
-        beta = [[0 for col in range(N)] for row in range(T)]
+        beta = [[0 for i in range(N)] for t in range(T)]
         #alpha scaling values
         c = [0] * T
-
-        gamma = [[0 for col in range(N)] for row in range(T)]
-
-        di_gamma = []
+        #gamma matrix
+        gamma = [[0 for i in range(N)] for t in range(T)]
+        #di gamma matrix
+        di_gamma = [[[0 for j in range(M)] for i in range(N)] for t in range(T)]
 #--------------------------#alpha pass#--------------------------#
         #initial time step
         c.append(0)
@@ -114,29 +115,31 @@ def Baum_Welch(A, B, pi, O):
         #scale beta_T with c_T
         
 #-----------------------#di-gamma and gamma#---------------------#       
-
-
+        #Compude gamma and di gamma
         for t in range(0, T-1):
             for i in range(0, N):
-                gamma_val = 0
                 for j in range(0, N):
+                    di_gamma[t][i][j] = alpha[t][i]*A[i][j]*B[j][O[t+1]]*beta[t+1][j]
+                    gamma[t][i] += di_gamma
 
-
+        #Special case for gamma[t-1]
+        for i in range(0, N):
+            gamma[-1][i] = alpha[-1][i]
 #--------------------#estimate new parameters#-------------------#
         #re-estimate pi
         for i in range(0, N):
-            pi[0][i] = gamma(0, i, A, B, pi, O, alpha, beta)
+            pi[0][i] = gamma[0][i]
 
         #re-estimate A
         for i in range(0, N):
             denom = 0
             for t in range(0, T-1):
-                denom += gamma(t, i, A, B, pi, O, alpha, beta)
+                denom += gamma[t][i]
             
             for j in range(0, N):
                 numer = 0
                 for t in range(0, T-1):
-                    numer += di_gamma(t, i, j, A, B, pi, O, alpha, beta)
+                    numer += di_gamma[t][i][j]
             
                 A[i][j] = numer/denom
 
@@ -144,20 +147,18 @@ def Baum_Welch(A, B, pi, O):
         for i in range(0, N):
             denom = 0
             for t in range(0, T):
-                denom += gamma(t, i, A, B, pi, O, alpha, beta)
+                denom += gamma[t][i]
             
             for j in range(j, N):
                 numer = 0
                 for t in range(0, T):
                     if(O[t] == j):
-                        numer += gamma(t, i, A, B, pi, O, alpha, beta)
+                        numer += gamma[t][i]
             
                 B[i][j] = numer/denom
 
 
         #Calculate the log of the observations with the new estimations
-        alpha, c = forwardAlgorithm(A, B, pi, O)
-        beta = backwardAlgorithm(A, B, O, c)
         logprob = -sum([math.log(1/ct, 10) for ct in c])
         iters += 1
         
