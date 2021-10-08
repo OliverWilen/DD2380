@@ -111,7 +111,18 @@ def Baum_Welch(A, B, pi, O):
             for value in alpha[t]:
                 value *= c[t]
 #---------------------------#beta pass#--------------------------#
-        #scale beta_T with c_T
+        #scale initial value
+        for i in range(0, N):
+            beta[0][i] = c[0]
+
+        #general case
+        for t in range(T-1, -1):
+            for i in range(0, N):
+                bt = 0
+                for j in range(0, N):
+                    bt += A[i][j] * B[j][O[t]] * beta[t+1][j]
+                bt *= c[t]
+                beta[t][i] = bt
         
 #-----------------------#di-gamma and gamma#---------------------#       
 
