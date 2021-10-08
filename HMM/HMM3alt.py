@@ -3,8 +3,6 @@ import fileinput
 import sys
 import math
 
-from HMM3 import gamma
-
 """
 Takes the input string and converst the first three lines to matrices.
 """
@@ -73,6 +71,7 @@ def Baum_Welch(A, B, pi, O):
     T = len(O)
 
     while(True):
+        print(iters)
 #-----------------------#initializations#-----------------------#        
         #alpha matrix
         alpha = [[0 for i in range(N)] for t in range(T)]
@@ -80,16 +79,15 @@ def Baum_Welch(A, B, pi, O):
         beta = [[0 for i in range(N)] for t in range(T)]
         #alpha scaling values
         c = [0] * T
+        print(c)
         #gamma matrix
         gamma = [[0 for i in range(N)] for t in range(T)]
         #di gamma matrix
         di_gamma = [[[0 for j in range(M)] for i in range(N)] for t in range(T)]
 #--------------------------#alpha pass#--------------------------#
         #initial time step
-        c.append(0)
-        alpha.append([])
         for i in range (0, N):
-            alpha[0].append(pi[i]*B[i][O[0]])
+            alpha[0][i] = pi[0][i]*B[i][O[0]]
             c[0] += alpha[0][i]
         #scale alpha
         c[0] = 1/c[0]
@@ -98,14 +96,11 @@ def Baum_Welch(A, B, pi, O):
 
         #general case
         for t in range(1, T):
-            c[t] = 0
-            alpha.append([])
             for i in range(0, N):
-                alpha[t].append([])
                 alpha_val = 0
                 for j in range(0, N):
-                    alpha_val += alpha[t-1][j]*A[j][i]
-                alpha[t][i] = alpha_val*B[i][O[t]]
+                    alpha[t][i] += alpha[t-1][j]*A[j][i]
+                alpha[t][i] *= B[i][O[t]]
                 c[t] += alpha[t][i]
             #scale alpha
             c[t] = 1/c[t]
