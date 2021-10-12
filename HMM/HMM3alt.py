@@ -63,7 +63,7 @@ def matrixToString(matrix):
 
 #Runs the overall structure of the Baum-Welch algorithm.
 def Baum_Welch(A, B, pi, O):
-    maxIters = 1000000
+    maxIters = 120
     iters = 0
     oldlogProb = -math.inf
     N = len(A)
@@ -112,20 +112,19 @@ def Baum_Welch(A, B, pi, O):
         #general case
         for t in range(T-2, -1, -1):
             for i in range(0, N):
-                bt = 0
                 for j in range(0, N):
-                    beta[t][i] += A[i][j] * B[j][O[t]] * beta[t+1][j]
+                    beta[t][i] += A[i][j] * B[j][O[t+1]] * beta[t+1][j]
                 beta[t][i] = beta[t][i] * c[t]
         
 #-----------------------#di-gamma and gamma#---------------------#       
-        #Compude gamma and di gamma
+        #Compute gamma and di gamma
         for t in range(0, T-1):
             for i in range(0, N):
                 for j in range(0, N):
-                    di_gamma[t][i][j] = alpha[t][i]*A[i][j]*B[j][O[t+1]]*beta[t+1][j]
+                    di_gamma[t][i][j] = alpha[t][i] * A[i][j] * B[j][O[t+1]] * beta[t+1][j]
                     gamma[t][i] += di_gamma[t][i][j]
 
-        #Special case for gamma[t-1]
+        #Special case for gamma[T-1]
         for i in range(0, N):
             gamma[-1][i] = alpha[-1][i]
 #--------------------#estimate new parameters#-------------------#
